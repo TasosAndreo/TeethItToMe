@@ -1,0 +1,249 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f8;
+    color: #1f2937;
+}
+
+.app-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 50px auto;
+}
+
+
+/* HEADER */
+
+.app-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.app-header h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.app-header p {
+    color: #6b7280;
+    font-size: 16px;
+}
+
+
+/* CARDS */
+
+.recording-card,
+.transcription-card,
+.medical-info {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+
+/* STATUS */
+
+.status-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 25px;
+
+    font-size: 15px;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    margin-right: 10px;
+}
+
+
+/* RECORDING CONTROLS */
+
+.recording-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+.record-button,
+.stop-button {
+    border: none;
+
+    padding: 14px 22px;
+
+    border-radius: 8px;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.record-button {
+    background: #2563eb;
+    color: white;
+}
+
+.record-button:hover {
+    background: #1d4ed8;
+}
+
+.stop-button {
+    background: #ef4444;
+    color: white;
+}
+
+.stop-button:hover {
+    background: #dc2626;
+}
+
+.record-button:disabled,
+.stop-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* TIMER */
+
+.timer {
+    text-align: center;
+
+    font-size: 28px;
+    font-weight: bold;
+
+    margin-bottom: 20px;
+}
+
+
+/* AUDIO */
+
+.audio-container {
+    display: flex;
+    justify-content: center;
+}
+
+audio {
+    width: 100%;
+    max-width: 600px;
+}
+
+
+/* TRANSCRIPTION */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 15px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+}
+
+.clear-button {
+    border: none;
+
+    background: #e5e7eb;
+
+    padding: 8px 14px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+.clear-button:hover {
+    background: #d1d5db;
+}
+
+.transcription-area {
+    min-height: 180px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+
+    padding: 20px;
+
+    font-size: 17px;
+
+    line-height: 1.7;
+
+    background: #fafafa;
+}
+
+.placeholder {
+    color: #9ca3af;
+}
+
+
+/* MEDICAL INFO */
+
+.medical-info h2 {
+    margin-bottom: 10px;
+}
+
+.medical-info p {
+    color: #6b7280;
+
+    line-height: 1.6;
+}
+
+
+/* FOOTER */
+
+footer {
+    text-align: center;
+
+    color: #9ca3af;
+
+    font-size: 13px;
+
+    margin-top: 30px;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+    .app-container {
+        width: 95%;
+        margin: 25px auto;
+    }
+
+    .app-header h1 {
+        font-size: 25px;
+    }
+
+    .recording-controls {
+        flex-direction: column;
+    }
+
+    .record-button,
+    .stop-button {
+        width: 100%;
+    }
+}
