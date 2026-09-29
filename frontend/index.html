@@ -1,0 +1,101 @@
+```html
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Greek Medical Speech-to-Text</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="app-container">
+
+        <header class="app-header">
+            <h1>Greek Medical Speech-to-Text</h1>
+            <p>Μετατροπή ελληνικής ομιλίας σε κείμενο</p>
+        </header>
+
+
+        <section class="recording-card">
+
+            <div class="status-container">
+                <span id="statusIndicator" class="status-indicator"></span>
+                <span id="statusText">Έτοιμο για εγγραφή</span>
+            </div>
+
+
+            <div class="recording-controls">
+
+                <button id="recordButton" class="record-button">
+                    🎙️
+                    <span>Έναρξη εγγραφής</span>
+                </button>
+
+                <button id="stopButton" class="stop-button" disabled>
+                    ⏹
+                    <span>Διακοπή</span>
+                </button>
+
+            </div>
+
+
+            <div class="timer">
+                <span id="timer">00:00</span>
+            </div>
+
+
+            <div class="audio-container">
+                <audio id="audioPlayer" controls></audio>
+            </div>
+
+        </section>
+
+
+        <section class="transcription-card">
+
+            <div class="section-header">
+                <h2>Μεταγραφή</h2>
+
+                <button id="clearButton" class="clear-button">
+                    Καθαρισμός
+                </button>
+            </div>
+
+            <div id="transcription" class="transcription-area">
+                <span class="placeholder">
+                    Η μεταγραφή θα εμφανιστεί εδώ...
+                </span>
+            </div>
+
+        </section>
+
+
+        <section class="medical-info">
+
+            <h2>Medical Mode</h2>
+
+            <p>
+                Η εφαρμογή είναι σχεδιασμένη για ελληνική ιατρική
+                ορολογία και μελλοντικά θα υποστηρίζει εξειδικευμένη
+                αναγνώριση ιατρικών όρων.
+            </p>
+
+        </section>
+
+
+        <footer>
+            <p>Greek Medical ASR — Development Version</p>
+        </footer>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
+```
