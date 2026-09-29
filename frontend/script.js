@@ -8,6 +8,9 @@ let timerInterval;
 
 const recordButton = document.getElementById("recordButton");
 const stopButton = document.getElementById("stopButton");
+const uploadButton = document.getElementById("uploadButton");
+
+const audioFile = document.getElementById("audioFile");
 
 const statusText = document.getElementById("statusText");
 const statusIndicator = document.getElementById("statusIndicator");
@@ -101,6 +104,41 @@ stopButton.addEventListener("click", () => {
     statusIndicator.style.background = "#22c55e";
 
     stopTimer();
+
+});
+
+// OPEN FILE SELECTOR
+
+uploadButton.addEventListener("click", () => {
+
+    audioFile.click();
+
+});
+
+
+// HANDLE UPLOADED AUDIO
+
+audioFile.addEventListener("change", () => {
+
+    const file = audioFile.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    // Create URL for the selected audio file
+    const audioUrl = URL.createObjectURL(file);
+
+    // Load audio into player
+    audioPlayer.src = audioUrl;
+
+    // Update status
+    statusText.textContent = `Αρχείο: ${file.name}`;
+
+    statusIndicator.style.background = "#2563eb";
+
+    // Future Whisper integration
+    simulateTranscription();
 
 });
 
