@@ -2,14 +2,18 @@ from fastapi import FastAPI, UploadFile, File
 
 from pathlib import Path
 
+from faster_whisper import WhisperModel
+
+app = FastAPI()
+
 # Directory where uploaded audio files will be stored
 UPLOAD_DIR = Path("uploads")
 
 # Create the directory if it doesn't exist
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-app = FastAPI()
-
+# WHISPER MODEL
+model = WhisperModel("small", device="cpu",compute_type="int8")
 
 @app.get("/")
 def home():
@@ -30,9 +34,16 @@ async def transcribe(file: UploadFile = File(...)):
     with open(file_path, "wb") as audio_file:
         audio_file.write(audio_data)
 
+     # WHISPER TRANSCRIPTION
+    segments, info = model.transcribe(str(file_path),language="el")
+
+    # Combine all Whisper segments
+    transcription = ""
+    for segment in segments:transcription += segment.text
+
     return {
         "filename": file.filename,
-        "content_type": file.content_type,
-        "file_size": len(audio_data),
-        "saved_to": str(file_path)
+        "language": info.language,
+        "language_probability": info.language_probability,
+        "text": transcription
     }
