@@ -35,11 +35,29 @@ async def transcribe(file: UploadFile = File(...)):
         audio_file.write(audio_data)
 
      # WHISPER TRANSCRIPTION
-    segments, info = model.transcribe(str(file_path),language="el")
+    segments, info = model.transcribe(
+    str(file_path),
+    language="el",
+    beam_size=5,
+    vad_filter=True,
+    condition_on_previous_text=True,
+    initial_prompt="""
+    Ελληνική οδοντιατρική ιατρική ορολογία.
+    Κάτω γνάθος, άνω γνάθος, δόντι, δόντια,
+    ακροριζικές αλλοιώσεις, αλλοιώσεις,
+    απόστημα, αποστήματα, πέτρα,
+    οδοντική πέτρα, τερηδόνα,
+    ουλίτιδα, περιοδοντίτιδα,
+    ακρορρίζιο, ρίζα, ρίζες,
+    γομφίος, προγόμφιος, τομέας,
+    οδοντικό απόστημα.
+    """
+)
 
     # Combine all Whisper segments
     transcription = ""
-    for segment in segments:transcription += segment.text
+    for segment in segments:
+        transcription += segment.text
 
     return {
         "filename": file.filename,
