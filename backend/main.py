@@ -12,7 +12,25 @@ UPLOAD_DIR = Path("uploads")
 # Create the directory if it doesn't exist
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# WHISPER MODEL
+MEDICAL_TERMS_DIR = Path("medical_terms")
+DENTISTRY_TERMS_FILE = MEDICAL_TERMS_DIR / "dentistry.txt"
+
+# Load medical vocabulary
+def load_terms(file_path: Path) -> str:
+    if not file_path.exists():
+        return ""
+
+    terms = [
+        line.strip()
+        for line in file_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+    return ", ".join(terms)
+
+DENTISTRY_TERMS = load_terms(DENTISTRY_TERMS_FILE)
+
+# Whisaper model
 model = WhisperModel("small", device="cpu",compute_type="int8")
 
 @app.get("/")
@@ -24,44 +42,56 @@ def home():
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
 
-    # Create the path where the file will be saved
     file_path = UPLOAD_DIR / file.filename
 
-    # Read the uploaded file
     audio_data = await file.read()
 
-    # Save the audio file
     with open(file_path, "wb") as audio_file:
         audio_file.write(audio_data)
 
-     # WHISPER TRANSCRIPTION
-    segments, info = model.transcribe(
-    str(file_path),
-    language="el",
-    beam_size=5,
-    vad_filter=True,
-    condition_on_previous_text=True,
-    initial_prompt="""
+    initial_prompt = f"""
     Ελληνική οδοντιατρική ιατρική ορολογία.
-    Κάτω γνάθος, άνω γνάθος, δόντι, δόντια,
-    ακροριζικές αλλοιώσεις, αλλοιώσεις,
-    απόστημα, αποστήματα, πέτρα,
-    οδοντική πέτρα, τερηδόνα,
-    ουλίτιδα, περιοδοντίτιδα,
-    ακρορρίζιο, ρίζα, ρίζες,
-    γομφίος, προγόμφιος, τομέας,
-    οδοντικό απόστημα.
+    Χρησιμοποιούνται οι ακόλουθοι όροι:
+    {DENTISTRY_TERMS}
     """
-)
 
-    # Combine all Whisper segments
+    segments, info = model.transcribe(
+        str(file_path),
+        language="el",
+        beam_size=5,
+        vad_filter=True,
+        condition_on_previous_text=True,
+        initial_prompt=initial_prompt,
+        word_timestamps=True
+    )
+
     transcription = ""
+    timestamped_segments = []
+
     for segment in segments:
         transcription += segment.text
+
+        words = []
+
+        if segment.words:
+            for word in segment.words:
+                words.append({
+                    "start": word.start,
+                    "end": word.end,
+                    "word": word.word
+                })
+
+        timestamped_segments.append({
+            "start": segment.start,
+            "end": segment.end,
+            "text": segment.text,
+            "words": words
+     })
 
     return {
         "filename": file.filename,
         "language": info.language,
         "language_probability": info.language_probability,
-        "text": transcription
+        "text": transcription,
+        "segments": timestamped_segments
     }
