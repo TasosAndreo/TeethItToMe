@@ -1,8 +1,12 @@
+import shutil
+
 from fastapi import FastAPI, UploadFile, File
 
 from pathlib import Path
 
 from faster_whisper import WhisperModel
+
+from medical_terms.dentistry_corrections import correct_dental_word
 
 app = FastAPI()
 
@@ -30,6 +34,12 @@ def load_terms(file_path: Path) -> str:
 
 DENTISTRY_TERMS = load_terms(DENTISTRY_TERMS_FILE)
 
+initial_prompt = f"""
+Ελληνική οδοντιατρική ιατρική ορολογία.
+Χρησιμοποιούνται οι ακόλουθοι όροι:
+{DENTISTRY_TERMS}
+"""
+
 # Whisaper model
 model = WhisperModel("small", device="cpu",compute_type="int8")
 
@@ -44,16 +54,8 @@ async def transcribe(file: UploadFile = File(...)):
 
     file_path = UPLOAD_DIR / file.filename
 
-    audio_data = await file.read()
-
-    with open(file_path, "wb") as audio_file:
-        audio_file.write(audio_data)
-
-    initial_prompt = f"""
-    Ελληνική οδοντιατρική ιατρική ορολογία.
-    Χρησιμοποιούνται οι ακόλουθοι όροι:
-    {DENTISTRY_TERMS}
-    """
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
     segments, info = model.transcribe(
         str(file_path),
@@ -65,33 +67,47 @@ async def transcribe(file: UploadFile = File(...)):
         word_timestamps=True
     )
 
-    transcription = ""
-    timestamped_segments = []
+    corrected_transcription = ""
 
     for segment in segments:
-        transcription += segment.text
-
-        words = []
 
         if segment.words:
-            for word in segment.words:
-                words.append({
-                    "start": word.start,
-                    "end": word.end,
-                    "word": word.word
-                })
 
-        timestamped_segments.append({
-            "start": segment.start,
-            "end": segment.end,
-            "text": segment.text,
-            "words": words
-     })
+            for i, word in enumerate(segment.words):
 
-    return {
-        "filename": file.filename,
-        "language": info.language,
-        "language_probability": info.language_probability,
-        "text": transcription,
-        "segments": timestamped_segments
-    }
+                previous_words = [
+                    w.word.strip(" ,.!;:")
+                    for w in segment.words[max(0, i - 2):i]
+                ]
+
+                next_words = [
+                    w.word.strip(" ,.!;:")
+                    for w in segment.words[i + 1:i + 3]
+                ]
+
+                original_word = word.word
+
+                corrected_word = correct_dental_word(
+                    original_word,
+                    previous_words,
+                    next_words
+                )
+
+                # Preserve whitespace/punctuation from Whisper
+                leading_spaces = len(original_word) - len(original_word.lstrip())
+                trailing_spaces = len(original_word) - len(original_word.rstrip())
+
+                prefix = original_word[:leading_spaces]
+                suffix = original_word[len(original_word) - trailing_spaces:] if trailing_spaces > 0 else ""
+
+                corrected_transcription += (
+                    prefix
+                    + corrected_word.strip(" ,.!;:")
+                    + suffix
+                )
+
+        else:
+            corrected_transcription += segment.text
+
+
+    return corrected_transcription.strip()
