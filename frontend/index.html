@@ -74,15 +74,19 @@
             <div class="section-header">
                 <h2>Μεταγραφή</h2>
 
-                <button id="clearButton" class="clear-button">
+                <button type="button" id="clearButton" class="clear-button">
                     Καθαρισμός
                 </button>
             </div>
 
-            <div id="transcription" class="transcription-area">
-                <span class="placeholder">
-                    Η μεταγραφή θα εμφανιστεί εδώ...
-                </span>
+            <div class="transcription-container">
+                <label for="transcriptionText">Transcription</label>
+
+                <textarea
+                    id="transcriptionText"
+                    placeholder="Η απομαγνητοφώνηση θα εμφανιστεί εδώ..."
+                    spellcheck="true"
+                ></textarea>
             </div>
 
         </section>

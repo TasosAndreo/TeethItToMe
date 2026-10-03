@@ -19,7 +19,7 @@ const timer = document.getElementById("timer");
 
 const audioPlayer = document.getElementById("audioPlayer");
 
-const transcription = document.getElementById("transcription");
+const transcription = document.getElementById("transcriptionText");
 
 const clearButton = document.getElementById("clearButton");
 
@@ -176,12 +176,10 @@ function stopTimer() {
 
 clearButton.addEventListener("click", () => {
 
-    transcription.innerHTML =
-        `<span class="placeholder">
-            Η μεταγραφή θα εμφανιστεί εδώ...
-        </span>`;
+    transcription.value = "";
 
 });
+
 
 // TEMPORARY TRANSCRIPTION
 
@@ -190,10 +188,54 @@ function simulateTranscription() {
     transcription.innerHTML = `
         <p>
             <strong>Demo:</strong>
-            Ο ασθενής παρουσιάζει συμπτώματα
-            αρτηριακής υπέρτασης και αναφέρει
-            περιστασιακή δύσπνοια.
+            Η απομαγνητοφώνηση θα εμφανιστεί εδώ...
         </p>
     `;
 
 }
+
+audioFile.addEventListener("change", async () => {
+
+    const file = audioFile.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    const transcriptionText =
+        document.getElementById("transcriptionText");
+
+    transcriptionText.value = "Transcribing...";
+
+    try {
+
+        const formData = new FormData();
+
+        formData.append("file", file);
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/transcribe",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Server error: ${response.status}`
+            );
+        }
+
+        const correctedText = await response.text();
+
+        transcriptionText.value = correctedText;
+
+    } catch (error) {
+
+        console.error(error);
+
+        transcriptionText.value =
+            "Error during transcription.";
+    }
+});
