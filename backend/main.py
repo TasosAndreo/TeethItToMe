@@ -41,7 +41,7 @@ initial_prompt = f"""
 """
 
 # Whisaper model
-model = WhisperModel("small", device="cpu",compute_type="int8")
+model = WhisperModel("medium", device="cpu",compute_type="int8")
 
 @app.get("/")
 def home():
