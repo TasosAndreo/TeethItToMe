@@ -1,5 +1,8 @@
-from multiprocessing.util import info
 import shutil
+
+from uuid import uuid4
+
+from fastapi.responses import PlainTextResponse
 
 from fastapi import FastAPI, UploadFile, File
 
@@ -11,11 +14,14 @@ from medical_terms.dentistry_corrections import correct_dental_word
 
 app = FastAPI()
 
-# Directory where uploaded audio files will be stored
-UPLOAD_DIR = Path("uploads")
+# Directories for recordings and their transcriptions
+RECORDINGS_DIR = Path("recordings")
+UPLOAD_DIR = RECORDINGS_DIR / "audio"
+TRANSCRIPT_DIR = RECORDINGS_DIR / "transcripts"
 
-# Create the directory if it doesn't exist
-UPLOAD_DIR.mkdir(exist_ok=True)
+# Create directories if they don't exist
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+TRANSCRIPT_DIR.mkdir(parents=True, exist_ok=True)
 
 MEDICAL_TERMS_DIR = Path("medical_terms")
 DENTISTRY_TERMS_FILE = MEDICAL_TERMS_DIR / "dentistry.txt"
@@ -55,13 +61,22 @@ def home():
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
 
-    file_path = UPLOAD_DIR / file.filename
+    # Generate a unique ID for this recording
+    recording_id = uuid4().hex
 
-    with open(file_path, "wb") as buffer:
+    # Keep the original audio extension, such as .wav or .mp3
+    original_filename = Path(file.filename or "recording.wav").name
+    extension = Path(original_filename).suffix.lower() or ".wav"
+
+    # Use the same ID for the audio and transcript
+    audio_path = UPLOAD_DIR / f"{recording_id}{extension}"
+    transcript_path = TRANSCRIPT_DIR / f"{recording_id}.txt"
+
+    with open(audio_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     segments, info = model.transcribe(
-        str(file_path),
+        str(audio_path),
         language="el",
         beam_size=5,
         vad_filter=False,
@@ -72,10 +87,9 @@ async def transcribe(file: UploadFile = File(...)):
 
     print(f"Audio duration: {info.duration:.2f} seconds")
 
+    corrected_transcription = ""
     segment_count = 0
     last_segment_end = 0.0
-
-    corrected_transcription = ""
 
     for segment in segments:
 
@@ -120,8 +134,20 @@ async def transcribe(file: UploadFile = File(...)):
         else:
             corrected_transcription += segment.text
 
-        print(f"Segments processed: {segment_count}")
-        print(f"Last segment ends at: {last_segment_end:.2f} seconds")
-        print(f"Audio duration: {info.duration:.2f} seconds")
+    # Prepare the final corrected text
+    corrected_transcription = corrected_transcription.strip()
 
-    return corrected_transcription.strip()
+    # Save the transcription as UTF-8 to preserve Greek characters
+    transcript_path.write_text(
+        corrected_transcription,
+        encoding="utf-8"
+    )
+
+    print(f"Segments processed: {segment_count}")
+    print(f"Last segment ends at: {last_segment_end:.2f} seconds")
+    print(f"Audio duration: {info.duration:.2f} seconds")
+    print(f"Audio saved: {audio_path}")
+    print(f"Transcript saved: {transcript_path}")
+
+    # Return plain text to the frontend
+    return corrected_transcription
