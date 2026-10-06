@@ -1,3 +1,4 @@
+from multiprocessing.util import info
 import shutil
 
 from fastapi import FastAPI, UploadFile, File
@@ -41,7 +42,9 @@ initial_prompt = f"""
 """
 
 # Whisaper model
-model = WhisperModel("medium", device="cpu",compute_type="int8")
+model = WhisperModel("medium",
+                      device="cpu",
+                      compute_type="int8")
 
 @app.get("/")
 def home():
@@ -61,15 +64,23 @@ async def transcribe(file: UploadFile = File(...)):
         str(file_path),
         language="el",
         beam_size=5,
-        vad_filter=True,
+        vad_filter=False,
         condition_on_previous_text=True,
         initial_prompt=initial_prompt,
         word_timestamps=True
     )
 
+    print(f"Audio duration: {info.duration:.2f} seconds")
+
+    segment_count = 0
+    last_segment_end = 0.0
+
     corrected_transcription = ""
 
     for segment in segments:
+
+        segment_count += 1
+        last_segment_end = segment.end
 
         if segment.words:
 
@@ -109,5 +120,8 @@ async def transcribe(file: UploadFile = File(...)):
         else:
             corrected_transcription += segment.text
 
+        print(f"Segments processed: {segment_count}")
+        print(f"Last segment ends at: {last_segment_end:.2f} seconds")
+        print(f"Audio duration: {info.duration:.2f} seconds")
 
     return corrected_transcription.strip()
