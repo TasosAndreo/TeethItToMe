@@ -22,9 +22,131 @@ const audioPlayer = document.getElementById("audioPlayer");
 const transcription = document.getElementById("transcriptionText");
 
 const clearButton = document.getElementById("clearButton");
+const recordingsList = document.getElementById("recordingsList");
+
+const API_URL = "http://127.0.0.1:8000";
+
+// LOAD RECORDINGS
+async function loadRecordings() {
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/recordings`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Server error: ${response.status}`
+            );
+        }
+
+        const recordings = await response.json();
+
+        displayRecordings(recordings);
+
+    } catch (error) {
+
+        console.error("Could not load recordings:", error);
+
+        recordingsList.innerHTML = `
+            <p>
+                Δεν ήταν δυνατή η φόρτωση των εγγραφών.
+            </p>
+        `;
+    }
+}
+
+// DISPLAY RECORDINGS
+function displayRecordings(recordings) {
+
+    if (recordings.length === 0) {
+
+        recordingsList.innerHTML = `
+            <p>
+                Δεν υπάρχουν αποθηκευμένες εγγραφές.
+            </p>
+        `;
+
+        return;
+    }
+
+    recordingsList.innerHTML = "";
+
+    recordings.forEach(recording => {
+
+        const recordingElement = document.createElement("div");
+
+        recordingElement.className = "recording-item";
+
+        recordingElement.innerHTML = `
+            <span class="recording-name">
+                ${recording.name}
+            </span>
+
+            <button
+                class="open-recording-button"
+                data-recording="${recording.name}"
+            >
+                Άνοιγμα
+            </button>
+        `;
+
+        recordingsList.appendChild(recordingElement);
+    });
+
+}
+
+// OPEN RECORDING
+async function openRecording(recordingName) {
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/recordings/${recordingName}/transcript`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Server error: ${response.status}`
+            );
+        }
+
+        const text = await response.text();
+
+        transcription.value = text;
+
+        statusText.textContent =
+            `Άνοιξε: ${recordingName}`;
+
+        statusIndicator.style.background = "#22c55e";
+
+    } catch (error) {
+
+        console.error("Could not load transcript:", error);
+
+        statusText.textContent =
+            "Δεν ήταν δυνατή η φόρτωση της μεταγραφής.";
+    }
+}
+
+recordingsList.addEventListener("click", event => {
+
+    const button = event.target.closest(
+        ".open-recording-button"
+    );
+
+    if (!button) {
+        return;
+    }
+
+    const recordingName =
+        button.dataset.recording;
+
+    openRecording(recordingName);
+});
 
 // START RECORDING
-
 recordButton.addEventListener("click", async () => {
 
     try {
@@ -83,7 +205,6 @@ recordButton.addEventListener("click", async () => {
 });
 
 // STOP RECORDING
-
 stopButton.addEventListener("click", () => {
 
     if (!mediaRecorder) {
@@ -108,42 +229,13 @@ stopButton.addEventListener("click", () => {
 });
 
 // OPEN FILE SELECTOR
-
 uploadButton.addEventListener("click", () => {
 
     audioFile.click();
 
 });
 
-
-// HANDLE UPLOADED AUDIO
-
-audioFile.addEventListener("change", () => {
-
-    const file = audioFile.files[0];
-
-    if (!file) {
-        return;
-    }
-
-    // Create URL for the selected audio file
-    const audioUrl = URL.createObjectURL(file);
-
-    // Load audio into player
-    audioPlayer.src = audioUrl;
-
-    // Update status
-    statusText.textContent = `Αρχείο: ${file.name}`;
-
-    statusIndicator.style.background = "#2563eb";
-
-    // Future Whisper integration
-    simulateTranscription();
-
-});
-
 // TIMER
-
 function startTimer() {
 
     startTime = Date.now();
@@ -173,26 +265,11 @@ function stopTimer() {
 }
 
 // CLEAR TRANSCRIPTION
-
 clearButton.addEventListener("click", () => {
 
     transcription.value = "";
 
 });
-
-
-// TEMPORARY TRANSCRIPTION
-
-function simulateTranscription() {
-
-    transcription.innerHTML = `
-        <p>
-            <strong>Demo:</strong>
-            Η απομαγνητοφώνηση θα εμφανιστεί εδώ...
-        </p>
-    `;
-
-}
 
 audioFile.addEventListener("change", async () => {
 
@@ -202,10 +279,18 @@ audioFile.addEventListener("change", async () => {
         return;
     }
 
-    const transcriptionText =
-        document.getElementById("transcriptionText");
+    // Show the selected audio in the player
+    const audioUrl = URL.createObjectURL(file);
+    audioPlayer.src = audioUrl;
 
-    transcriptionText.value = "Transcribing...";
+    // Update status
+    statusText.textContent =
+        `Αρχείο: ${file.name}`;
+
+    statusIndicator.style.background = "#2563eb";
+
+    // Show transcription status
+    transcription.value = "Transcribing...";
 
     try {
 
@@ -214,7 +299,7 @@ audioFile.addEventListener("change", async () => {
         formData.append("file", file);
 
         const response = await fetch(
-            "http://127.0.0.1:8000/transcribe",
+            `${API_URL}/transcribe`,
             {
                 method: "POST",
                 body: formData
@@ -227,15 +312,32 @@ audioFile.addEventListener("change", async () => {
             );
         }
 
-        const correctedText = await response.text();
+        const correctedText =
+            await response.text();
 
-        transcriptionText.value = correctedText;
+        // Display transcription
+        transcription.value = correctedText;
+
+        // Refresh saved recordings
+        await loadRecordings();
+
+        statusText.textContent =
+            "Η μεταγραφή ολοκληρώθηκε.";
+
+        statusIndicator.style.background = "#22c55e";
 
     } catch (error) {
 
         console.error(error);
 
-        transcriptionText.value =
+        transcription.value =
             "Error during transcription.";
+
+        statusText.textContent =
+            "Σφάλμα κατά τη μεταγραφή.";
+
+        statusIndicator.style.background = "#ef4444";
     }
 });
+
+loadRecordings();

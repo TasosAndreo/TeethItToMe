@@ -68,7 +68,7 @@ async def transcribe(file: UploadFile = File(...)):
 
     # Use the same ID for the audio and transcript
     recording_name = f"recording_{timestamp}"
-    audio_path = UPLOAD_DIR / f"{timestamp}{extension}"
+    audio_path = UPLOAD_DIR / f"recording_{timestamp}{extension}"
     transcript_path = TRANSCRIPT_DIR / f"{recording_name}.txt"
 
     with open(audio_path, "wb") as buffer:
@@ -164,7 +164,9 @@ def get_recordings():
         recordings.append({
             "name": audio_file.stem,
             "audio": audio_file.name,
-            "transcript": transcript_file.name if transcript_file.exists() else None
+            "transcript": transcript_file.name 
+            if transcript_file.exists() 
+            else None
         })
 
     return recordings
