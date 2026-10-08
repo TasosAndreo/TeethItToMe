@@ -1,0 +1,5 @@
+backend/recordings/audio/
+backend/recordings/transcripts/
+backend/venv/
+backend/__pycache__/
+*.pyc
