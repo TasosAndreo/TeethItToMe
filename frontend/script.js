@@ -3,6 +3,7 @@ let audioChunks = [];
 
 let startTime;
 let timerInterval;
+let currentRecordingName = null;
 
 // ELEMENTS
 
@@ -23,6 +24,9 @@ const transcription = document.getElementById("transcriptionText");
 
 const clearButton = document.getElementById("clearButton");
 const recordingsList = document.getElementById("recordingsList");
+
+const saveTranscriptButton = document.getElementById("saveTranscriptButton");
+const saveStatus = document.getElementById("saveStatus");
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -113,8 +117,8 @@ async function openRecording(recordingName) {
         }
 
         const text = await response.text();
-
         transcription.value = text;
+        currentRecordingName = recordingName;
 
         statusText.textContent =
             `Άνοιξε: ${recordingName}`;
@@ -337,6 +341,51 @@ audioFile.addEventListener("change", async () => {
             "Σφάλμα κατά τη μεταγραφή.";
 
         statusIndicator.style.background = "#ef4444";
+    }
+});
+
+saveTranscriptButton.addEventListener("click", async () => {
+    // Make sure a saved recording is currently open.
+    if (!currentRecordingName) {
+        saveStatus.textContent = "Please open a saved transcript first.";
+        return;
+    }
+
+    saveTranscriptButton.disabled = true;
+    saveStatus.textContent = "Saving transcript...";
+
+    try {
+        const response = await fetch(
+            `${API_URL}/recordings/${currentRecordingName}/transcript`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    text: transcription.value
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(
+                `Server error ${response.status}: ${errorDetails}`
+            );
+        }
+
+        saveStatus.textContent = "Transcript saved successfully.";
+        statusText.textContent = `Saved: ${currentRecordingName}`;
+        statusIndicator.style.background = "#22c55e";
+
+    } catch (error) {
+        console.error("Could not save transcript:", error);
+        saveStatus.textContent = `Save failed: ${error.message}`;
+        statusIndicator.style.background = "#ef4444";
+
+    } finally {
+        saveTranscriptButton.disabled = false;
     }
 });
 
