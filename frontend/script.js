@@ -331,7 +331,7 @@ audioFile.addEventListener("change", async () => {
         console.error(error);
 
         transcription.value =
-            "Error during transcription.";
+        `Error during transcription: ${error.message}`;
 
         statusText.textContent =
             "Σφάλμα κατά τη μεταγραφή.";

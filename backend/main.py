@@ -6,6 +6,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from pydantic import BaseModel
 from faster_whisper import WhisperModel
 from medical_terms.dentistry_corrections import correct_dental_word
+from fastapi.middleware.cors import CORSMiddleware
 
 # Directories for recordings and their transcriptions
 RECORDINGS_DIR = Path("recordings")
@@ -20,6 +21,15 @@ MEDICAL_TERMS_DIR = Path("medical_terms")
 DENTISTRY_TERMS_FILE = MEDICAL_TERMS_DIR / "dentistry.txt"
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class TranscriptUpdate(BaseModel):
     text: str
@@ -155,7 +165,9 @@ def get_recordings():
     recordings = []
 
     for audio_file in sorted(UPLOAD_DIR.iterdir(), reverse=True):
-
+        
+        if audio_file.name == ".DS_Store":
+            continue
         if not audio_file.is_file():
             continue
 
