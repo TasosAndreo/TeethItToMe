@@ -1,6 +1,5 @@
 let mediaRecorder;
 let audioChunks = [];
-
 let startTime;
 let timerInterval;
 let currentRecordingName = null;
@@ -10,24 +9,16 @@ let currentRecordingName = null;
 const recordButton = document.getElementById("recordButton");
 const stopButton = document.getElementById("stopButton");
 const uploadButton = document.getElementById("uploadButton");
-
 const audioFile = document.getElementById("audioFile");
-
 const statusText = document.getElementById("statusText");
 const statusIndicator = document.getElementById("statusIndicator");
-
 const timer = document.getElementById("timer");
-
 const audioPlayer = document.getElementById("audioPlayer");
-
 const transcription = document.getElementById("transcriptionText");
-
 const clearButton = document.getElementById("clearButton");
 const recordingsList = document.getElementById("recordingsList");
-
 const saveTranscriptButton = document.getElementById("saveTranscriptButton");
 const saveStatus = document.getElementById("saveStatus");
-
 const API_URL = "http://127.0.0.1:8000";
 
 // LOAD RECORDINGS
@@ -316,11 +307,12 @@ audioFile.addEventListener("change", async () => {
             );
         }
 
-        const correctedText =
-            await response.text();
+        const correctedText = await response.text();
 
-        // Display transcription
-        transcription.value = correctedText;
+        // Convert literal "\n" sequences into actual line breaks.
+        const formattedText = correctedText.replace(/\\n/g, "\n");
+
+        transcription.value = formattedText;
 
         // Refresh saved recordings
         await loadRecordings();

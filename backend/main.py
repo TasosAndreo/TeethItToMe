@@ -1,6 +1,8 @@
 import shutil
+import re
 from datetime import datetime
 from pathlib import Path
+from unittest import result
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import PlainTextResponse, FileResponse
 from pydantic import BaseModel
@@ -54,6 +56,18 @@ initial_prompt = f"""
 Χρησιμοποιούνται οι ακόλουθοι όροι:
 {DENTISTRY_TERMS}
 """
+cbct_prompt = """
+Greek CBCT dental radiology diagnostic report.
+Use accurate Greek dental and anatomical terminology.
+Pay attention to tooth numbering with the # prefix,
+right and left abbreviations ΔΕ and ΑΡ,
+and the following terms:
+ΠΚΦΝ, ΜΒ2, γναθιαίος κόλπος, ρινοϋπερώιος πόρος,
+περιακρορριζική αλλοίωση, φατνιολυσία,
+οστική υφίζηση, ακρορρίζιο, ριζικός σωλήνας,
+οστική πύκνωση, υπόπυκνη, υπέρπυκνη,
+οστεοενσωμάτωση, έγκλειστος, ημιέγκλειστος.
+"""
 
 # Whisaper model
 model = WhisperModel("medium",
@@ -65,6 +79,25 @@ def home():
     return {
         "message": "Greek Medical ASR Backend is running!"
     }
+
+
+# Replace spoken "επόμενο bullet" with a bullet on a new line.
+def format_bullet_points(text: str) -> str:
+    # Convert literal "\n" sequences into real newline characters.
+    text = text.replace("\\n", "\n")
+
+    # Replace spoken "επόμενο bullet" with a bullet on a new line.
+    text = re.sub(
+        r"\s*επόμενο\s+(?:bullet|μπουλετ|μπουλέτ)[,.]?\s*",
+        "\n• ",
+        text,
+        flags=re.IGNORECASE
+    )
+
+    # Remove extra spaces around bullet points.
+    text = re.sub(r"[ \t]*\n[ \t]*•[ \t]*", "\n• ", text)
+
+    return text.strip()
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
@@ -90,7 +123,7 @@ async def transcribe(file: UploadFile = File(...)):
         beam_size=5,
         vad_filter=False,
         condition_on_previous_text=True,
-        initial_prompt=initial_prompt,
+        initial_prompt=cbct_prompt,
         word_timestamps=True
     )
 
@@ -144,6 +177,9 @@ async def transcribe(file: UploadFile = File(...)):
 
     # Prepare the final corrected text
     corrected_transcription = corrected_transcription.strip()
+    corrected_transcription = format_bullet_points(
+    corrected_transcription
+)
 
     # Save the transcription as UTF-8 to preserve Greek characters
     transcript_path.write_text(
@@ -165,7 +201,7 @@ def get_recordings():
     recordings = []
 
     for audio_file in sorted(UPLOAD_DIR.iterdir(), reverse=True):
-        
+
         if audio_file.name == ".DS_Store":
             continue
         if not audio_file.is_file():
