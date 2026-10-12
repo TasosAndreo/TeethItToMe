@@ -1,5 +1,23 @@
+
+# Python virtual environments
+venv/
+backend/venv/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# macOS files
+.DS_Store
+
+# Local editor settings (optional)
+.vscode/
+
+# Local recordings and transcripts
 backend/recordings/audio/
 backend/recordings/transcripts/
-backend/venv/
-backend/__pycache__/
-*.pyc

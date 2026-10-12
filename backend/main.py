@@ -56,18 +56,24 @@ initial_prompt = f"""
 Χρησιμοποιούνται οι ακόλουθοι όροι:
 {DENTISTRY_TERMS}
 """
+
 cbct_prompt = """
-Greek CBCT dental radiology diagnostic report.
-Use accurate Greek dental and anatomical terminology.
-Pay attention to tooth numbering with the # prefix,
-right and left abbreviations ΔΕ and ΑΡ,
-and the following terms:
-ΠΚΦΝ, ΜΒ2, γναθιαίος κόλπος, ρινοϋπερώιος πόρος,
-περιακρορριζική αλλοίωση, φατνιολυσία,
-οστική υφίζηση, ακρορρίζιο, ριζικός σωλήνας,
-οστική πύκνωση, υπόπυκνη, υπέρπυκνη,
-οστεοενσωμάτωση, έγκλειστος, ημιέγκλειστος.
+Greek dental CBCT radiology report dictated by a dentist.
+Transcribe the spoken Greek accurately. Preserve the actual
+words and sentence order. Do not invent or complete sentences.
+
+Dental and radiological terminology:
+υπολειμματικές ρίζες, περιακρορριζική αλλοίωση,
+αξιοσημείωτη, διακρίνονται, θέση, ακρορρίζιο,
+ριζικός σωλήνας, γναθιαίος κόλπος, φατνιακή ακρολοφία,
+οστική υφίζηση, οστική πύκνωση, έγκλειστος,
+ημιέγκλειστος, οστεοενσωμάτωση.
+
+Tooth numbers may be dictated in Greek and should be
+transcribed in their dental context.
+Right and left abbreviations: ΔΕ, ΑΡ.
 """
+
 
 # Whisaper model
 model = WhisperModel("medium",
