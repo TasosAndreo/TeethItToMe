@@ -74,19 +74,6 @@ transcribed in their dental context.
 Right and left abbreviations: ΔΕ, ΑΡ.
 """
 
-
-# Whisaper model
-model = WhisperModel("medium",
-                      device="cpu",
-                      compute_type="int8")
-
-@app.get("/")
-def home():
-    return {
-        "message": "Greek Medical ASR Backend is running!"
-    }
-
-
 # Replace spoken "επόμενο bullet" with a bullet on a new line.
 def format_bullet_points(text: str) -> str:
     # Convert literal "\n" sequences into real newline characters.
@@ -104,6 +91,36 @@ def format_bullet_points(text: str) -> str:
     text = re.sub(r"[ \t]*\n[ \t]*•[ \t]*", "\n• ", text)
 
     return text.strip()
+
+# Add the symbol # before two-digit FDI tooth numbers
+def format_tooth_numbers(text: str) -> str:
+    text = re.sub(
+        r"\b(ρίζες|ρίζα|δόντι|δόντια|θέση|περιοχή)"
+        r"(\s+(?:του|της|των|το|τη|την|στη|στην|στο|στης))?"
+        r"\s+(\d{2})\b",
+        lambda match: (
+            match.group(1)
+            + (match.group(2) or "")
+            + " #"
+            + match.group(3)
+        ),
+        text,
+        flags=re.IGNORECASE
+    )
+
+    return text
+
+
+# Whisaper model
+model = WhisperModel("medium",
+                      device="cpu",
+                      compute_type="int8")
+
+@app.get("/")
+def home():
+    return {
+        "message": "Greek Medical ASR Backend is running!"
+    }
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
@@ -183,9 +200,8 @@ async def transcribe(file: UploadFile = File(...)):
 
     # Prepare the final corrected text
     corrected_transcription = corrected_transcription.strip()
-    corrected_transcription = format_bullet_points(
-    corrected_transcription
-)
+    corrected_transcription = format_bullet_points(corrected_transcription)
+    corrected_transcription = format_tooth_numbers(corrected_transcription)
 
     # Save the transcription as UTF-8 to preserve Greek characters
     transcript_path.write_text(
