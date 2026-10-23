@@ -3,10 +3,13 @@ let audioChunks = [];
 let startTime;
 let timerInterval;
 let currentRecordingName = null;
+let elapsedSeconds = 0;
+let timerStartedAt = null;
 
 // ELEMENTS
 
 const recordButton = document.getElementById("recordButton");
+const pauseButton = document.getElementById("pauseButton");
 const stopButton = document.getElementById("stopButton");
 const uploadButton = document.getElementById("uploadButton");
 const audioFile = document.getElementById("audioFile");
@@ -125,6 +128,67 @@ async function openRecording(recordingName) {
     }
 }
 
+
+function updateTimerDisplay() {
+    const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, "0");
+    const seconds = String(elapsedSeconds % 60).padStart(2, "0");
+
+    timer.textContent = `${minutes}:${seconds}`;
+}
+
+function startTimer() {
+    elapsedSeconds = 0;
+    timerStartedAt = Date.now();
+
+    clearInterval(timerInterval);
+
+    timerInterval = setInterval(() => {
+        elapsedSeconds =
+            Math.floor((Date.now() - timerStartedAt) / 1000);
+
+        updateTimerDisplay();
+    }, 250);
+}
+
+function pauseTimer() {
+    if (timerStartedAt !== null) {
+        elapsedSeconds +=
+            Math.floor((Date.now() - timerStartedAt) / 1000);
+
+        timerStartedAt = null;
+    }
+
+    clearInterval(timerInterval);
+    updateTimerDisplay();
+}
+
+function resumeTimer() {
+    if (timerStartedAt !== null) {
+        return;
+    }
+
+    timerStartedAt = Date.now();
+
+    clearInterval(timerInterval);
+
+    timerInterval = setInterval(() => {
+    updateTimerDisplay();
+    }, 250);
+}
+
+function stopTimer() {
+    if (timerStartedAt !== null) {
+        elapsedSeconds +=
+            Math.floor((Date.now() - timerStartedAt) / 1000);
+
+        timerStartedAt = null;
+    }
+
+    clearInterval(timerInterval);
+    updateTimerDisplay();
+}
+
+
 recordingsList.addEventListener("click", event => {
 
     const button = event.target.closest(
@@ -180,6 +244,9 @@ recordButton.addEventListener("click", async () => {
         recordButton.disabled = true;
         stopButton.disabled = false;
 
+        pauseButton.disabled = false;
+        pauseButton.hidden = false;
+
         statusText.textContent = "Εγγραφή σε εξέλιξη...";
 
         statusIndicator.style.background = "#ef4444";
@@ -199,6 +266,32 @@ recordButton.addEventListener("click", async () => {
 
 });
 
+// PAUSE / RESUME RECORDING
+pauseButton.addEventListener("click", () => {
+    if (!mediaRecorder) {
+        return;
+    }
+
+    if (mediaRecorder.state === "recording") {
+        mediaRecorder.pause();
+
+        pauseButton.innerHTML = "▶ <span>Συνέχεια</span>";
+        statusText.textContent = "Η εγγραφή έχει παύσει.";
+        statusIndicator.style.background = "#f59e0b";
+
+        pauseTimer();
+
+    } else if (mediaRecorder.state === "paused") {
+        mediaRecorder.resume();
+
+        pauseButton.innerHTML = "⏸ <span>Παύση</span>";
+        statusText.textContent = "Εγγραφή σε εξέλιξη...";
+        statusIndicator.style.background = "#ef4444";
+
+        resumeTimer();
+    }
+});
+
 // STOP RECORDING
 stopButton.addEventListener("click", () => {
 
@@ -214,6 +307,9 @@ stopButton.addEventListener("click", () => {
 
     recordButton.disabled = false;
     stopButton.disabled = true;
+    pauseButton.disabled = true;
+    pauseButton.hidden = true;
+    pauseButton.innerHTML = "⏸ <span>Παύση</span>";
 
     statusText.textContent = "Η εγγραφή ολοκληρώθηκε.";
 

@@ -98,6 +98,27 @@ body {
     transition: 0.2s;
 }
 
+.pause-button {
+    border: none;
+    padding: 14px 22px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #f59e0b;
+    color: white;
+}
+
+.pause-button:hover {
+    background: #d97706;
+}
+
+.pause-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
 .record-button {
     background: #2563eb;
     color: white;
