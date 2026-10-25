@@ -128,37 +128,48 @@ async function openRecording(recordingName) {
     }
 }
 
-
 function updateTimerDisplay() {
-    const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, "0");
-    const seconds = String(elapsedSeconds % 60).padStart(2, "0");
+    const minutes = String(
+        Math.floor(elapsedSeconds / 60)
+    ).padStart(2, "0");
+
+    const seconds = String(
+        elapsedSeconds % 60
+    ).padStart(2, "0");
 
     timer.textContent = `${minutes}:${seconds}`;
 }
 
 function startTimer() {
+    // Reset the timer for a new recording.
     elapsedSeconds = 0;
     timerStartedAt = Date.now();
 
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
-        elapsedSeconds =
-            Math.floor((Date.now() - timerStartedAt) / 1000);
+        elapsedSeconds = Math.floor(
+            (Date.now() - timerStartedAt) / 1000
+        );
 
         updateTimerDisplay();
     }, 250);
+
+    updateTimerDisplay();
 }
 
 function pauseTimer() {
     if (timerStartedAt !== null) {
-        elapsedSeconds +=
-            Math.floor((Date.now() - timerStartedAt) / 1000);
+        elapsedSeconds = Math.floor(
+            (Date.now() - timerStartedAt) / 1000
+        );
 
         timerStartedAt = null;
     }
 
     clearInterval(timerInterval);
+    timerInterval = null;
+
     updateTimerDisplay();
 }
 
@@ -167,27 +178,34 @@ function resumeTimer() {
         return;
     }
 
-    timerStartedAt = Date.now();
+    // Continue from the previously elapsed time.
+    timerStartedAt = Date.now() - elapsedSeconds * 1000;
 
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
-    updateTimerDisplay();
+        elapsedSeconds = Math.floor(
+            (Date.now() - timerStartedAt) / 1000
+        );
+
+        updateTimerDisplay();
     }, 250);
 }
 
 function stopTimer() {
     if (timerStartedAt !== null) {
-        elapsedSeconds +=
-            Math.floor((Date.now() - timerStartedAt) / 1000);
+        elapsedSeconds = Math.floor(
+            (Date.now() - timerStartedAt) / 1000
+        );
 
         timerStartedAt = null;
     }
 
     clearInterval(timerInterval);
+    timerInterval = null;
+
     updateTimerDisplay();
 }
-
 
 recordingsList.addEventListener("click", event => {
 
@@ -325,35 +343,6 @@ uploadButton.addEventListener("click", () => {
     audioFile.click();
 
 });
-
-// TIMER
-function startTimer() {
-
-    startTime = Date.now();
-
-    timerInterval = setInterval(() => {
-
-        const elapsed =
-            Math.floor((Date.now() - startTime) / 1000);
-
-        const minutes =
-            String(Math.floor(elapsed / 60)).padStart(2, "0");
-
-        const seconds =
-            String(elapsed % 60).padStart(2, "0");
-
-        timer.textContent =
-            `${minutes}:${seconds}`;
-
-    }, 1000);
-
-}
-
-function stopTimer() {
-
-    clearInterval(timerInterval);
-
-}
 
 // CLEAR TRANSCRIPTION
 clearButton.addEventListener("click", () => {
