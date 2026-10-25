@@ -233,28 +233,80 @@ recordButton.addEventListener("click", async () => {
         });
 
         mediaRecorder = new MediaRecorder(stream);
-
         audioChunks = [];
 
+        // Collect audio data while recording.
         mediaRecorder.addEventListener("dataavailable", event => {
-
+            if (event.data.size > 0) {
             audioChunks.push(event.data);
-
+            }
         });
 
-        mediaRecorder.addEventListener("stop", () => {
+        // Transcribe the recording after Stop is pressed.
+        mediaRecorder.addEventListener("stop", async () => {
+            console.log("Recording stopped. Starting transcription...");
 
             const audioBlob = new Blob(audioChunks, {
-                type: "audio/webm"
+                type: mediaRecorder.mimeType || "audio/webm"
             });
 
+            // Display the recorded audio.
             const audioUrl = URL.createObjectURL(audioBlob);
-
             audioPlayer.src = audioUrl;
 
-            // Future backend integration
-            simulateTranscription();
+            statusText.textContent = "Γίνεται μεταγραφή της εγγραφής...";
+            statusIndicator.style.background = "#2563eb";
+            transcription.value = "Transcribing...";
 
+            try {
+                const formData = new FormData();
+
+                const recordedFile = new File(
+                    [audioBlob],
+                    `live_recording_${Date.now()}.webm`,
+                    { type: audioBlob.type }
+                );
+
+                formData.append("file", recordedFile);
+
+                // Send the audio to the FastAPI backend.
+                const response = await fetch(`${API_URL}/transcribe`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+
+                    throw new Error(
+                        `Server error ${response.status}: ${errorDetails}`
+                    );
+                }
+
+                // The backend returns the transcript as plain text.
+                const correctedText = await response.text();
+
+                transcription.value = correctedText.replace(/\\n/g, "\n");
+
+                // Refresh the saved recordings list.
+                await loadRecordings();
+
+                statusText.textContent = "Η μεταγραφή ολοκληρώθηκε.";
+                statusIndicator.style.background = "#22c55e";
+
+            } catch (error) {
+                console.error("Transcription failed:", error);
+
+                transcription.value =
+                    `Error during transcription: ${error.message}`;
+
+                statusText.textContent = "Σφάλμα κατά τη μεταγραφή.";
+                statusIndicator.style.background = "#ef4444";
+
+            } finally {
+                // Release the microphone after processing.
+                stream.getTracks().forEach(track => track.stop());
+            }
         });
 
         mediaRecorder.start();
@@ -264,6 +316,7 @@ recordButton.addEventListener("click", async () => {
 
         pauseButton.disabled = false;
         pauseButton.hidden = false;
+        pauseButton.innerHTML = "⏸ <span>Παύση</span>";
 
         statusText.textContent = "Εγγραφή σε εξέλιξη...";
 
@@ -274,19 +327,17 @@ recordButton.addEventListener("click", async () => {
     }
 
     catch (error) {
-
-        console.error(error);
+        console.error("Could not start recording:",error);
 
         statusText.textContent =
             "Δεν ήταν δυνατή η πρόσβαση στο μικρόφωνο.";
-
     }
 
 });
 
 // PAUSE / RESUME RECORDING
 pauseButton.addEventListener("click", () => {
-    if (!mediaRecorder) {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
         return;
     }
 
@@ -312,17 +363,19 @@ pauseButton.addEventListener("click", () => {
 
 // STOP RECORDING
 stopButton.addEventListener("click", () => {
-
-    if (!mediaRecorder) {
+    // Do nothing if no recording is active.
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
         return;
     }
 
+    // Stop recording. This triggers the transcription handler above.
     mediaRecorder.stop();
 
     mediaRecorder.stream
         .getTracks()
         .forEach(track => track.stop());
 
+    // Reset the recording controls.
     recordButton.disabled = false;
     stopButton.disabled = true;
     pauseButton.disabled = true;
@@ -336,6 +389,7 @@ stopButton.addEventListener("click", () => {
     stopTimer();
 
 });
+
 
 // OPEN FILE SELECTOR
 uploadButton.addEventListener("click", () => {
