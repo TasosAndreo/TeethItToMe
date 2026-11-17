@@ -38,8 +38,6 @@ TeethItToMe/
 └── .gitignore
 ```
 
-The `venv/` directory contains a local Python virtual environment and should not be committed to GitHub.
-
 ## Requirements
 
 - Python 3
