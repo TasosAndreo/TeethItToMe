@@ -2,6 +2,8 @@
 from io import BytesIO
 from pathlib import Path
 
+from xml.sax.saxutils import escape
+
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import A4
@@ -78,7 +80,7 @@ styles.add(
 # PDF GENERATOR
 # --------------------------------------------------
 
-def generate_clinical_report():
+def generate_clinical_report(report_data):
 
     # Create an in-memory PDF file.
     pdf_buffer = BytesIO()
@@ -114,10 +116,14 @@ def generate_clinical_report():
         )
     )
 
+    patient_name = escape(str(report_data.get("patient_name") or "Δεν έχει καταχωρηθεί"))
+    date_of_birth = escape(str(report_data.get("date_of_birth") or "Δεν έχει καταχωρηθεί"))
+    examination_date = escape(str(report_data.get("examination_date") or "Δεν έχει καταχωρηθεί"))
+
     patient_data = [
-        ["Ονοματεπώνυμο:", "Παράδειγμα Ασθενούς"],
-        ["Ημερομηνία Γέννησης:", "01/01/1980"],
-        ["Ημερομηνία Εξέτασης:", "25/11/2026"]
+        ["Ονοματεπώνυμο:", patient_name],
+        ["Ημερομηνία Γέννησης:", date_of_birth],
+        ["Ημερομηνία Εξέτασης:", examination_date]
     ]
 
     patient_table = Table(
@@ -150,12 +156,11 @@ def generate_clinical_report():
         )
     )
 
-    clinical_text = (
-        "Ο ασθενής προσήλθε για οδοντιατρική εξέταση. "
-        "Κατά την κλινική αξιολόγηση καταγράφηκαν "
-        "τα ακόλουθα ευρήματα. "
-        "Το κείμενο αυτό είναι ενδεικτικό και θα "
-        "αντικατασταθεί από την πραγματική απομαγνητοφώνηση."
+    clinical_text = escape(
+        str(
+            report_data.get("clinical_findings")
+            or "Δεν έχουν καταχωριστεί κλινικά ευρήματα."
+        )
     )
 
     story.append(

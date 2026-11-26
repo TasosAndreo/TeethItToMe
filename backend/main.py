@@ -4,11 +4,12 @@ from datetime import datetime
 from pathlib import Path
 from unittest import result
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import PlainTextResponse, FileResponse
+from fastapi.responses import PlainTextResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
 from faster_whisper import WhisperModel
 from medical_terms.dentistry_corrections import correct_dental_word
 from fastapi.middleware.cors import CORSMiddleware
+from pdf_reports.generator import generate_clinical_report
 
 # Directories for recordings and their transcriptions
 RECORDINGS_DIR = Path("recordings")
@@ -35,6 +36,12 @@ app.add_middleware(
 
 class TranscriptUpdate(BaseModel):
     text: str
+
+class ClinicalReportRequest(BaseModel):
+    patient_name: str = ""
+    date_of_birth: str = ""
+    examination_date: str = ""
+    clinical_findings: str = ""
 
 # Load medical vocabulary
 def load_terms(file_path: Path) -> str:
@@ -121,6 +128,24 @@ def home():
     return {
         "message": "Greek Medical ASR Backend is running!"
     }
+
+@app.post("/generate-report")
+def generate_report(report: ClinicalReportRequest):
+
+    # Convert the incoming request into a dictionary.
+    report_data = report.dict()
+
+    # Generate the PDF.
+    pdf_buffer = generate_clinical_report(report_data)
+
+    # Return the PDF as a downloadable response.
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="clinical_report.pdf"'
+        }
+    )
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
