@@ -1,45 +1,174 @@
 
 from io import BytesIO
-
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-
 from pathlib import Path
 
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle
+)
 
-# Locate the font file relative to this Python file.
+
+# --------------------------------------------------
+# FONT CONFIGURATION
+# --------------------------------------------------
+
 FONT_PATH = Path(__file__).parent / "fonts" / "DejaVuSans.ttf"
 
-# Register the Unicode font.
 pdfmetrics.registerFont(
     TTFont("DejaVu", str(FONT_PATH))
 )
 
 
+# --------------------------------------------------
+# DOCUMENT STYLES
+# --------------------------------------------------
+
+styles = getSampleStyleSheet()
+
+styles.add(
+    ParagraphStyle(
+        name="ReportTitle",
+        parent=styles["Title"],
+        fontName="DejaVu",
+        fontSize=18,
+        leading=24,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#243447"),
+        spaceAfter=8
+    )
+)
+
+styles.add(
+    ParagraphStyle(
+        name="SectionHeading",
+        parent=styles["Heading2"],
+        fontName="DejaVu",
+        fontSize=12,
+        leading=16,
+        textColor=colors.HexColor("#243447"),
+        spaceBefore=12,
+        spaceAfter=6
+    )
+)
+
+styles.add(
+    ParagraphStyle(
+        name="ReportBody",
+        parent=styles["BodyText"],
+        fontName="DejaVu",
+        fontSize=10,
+        leading=15,
+        alignment=TA_LEFT,
+        spaceAfter=6
+    )
+)
+
+
+# --------------------------------------------------
+# PDF GENERATOR
+# --------------------------------------------------
+
 def generate_clinical_report():
-    # Create an in-memory file for the PDF.
+
+    # Create an in-memory PDF file.
     pdf_buffer = BytesIO()
 
-    # Create a PDF canvas using A4 dimensions.
-    pdf = canvas.Canvas(pdf_buffer, pagesize=A4)
+    # Configure the document.
+    document = SimpleDocTemplate(
+        pdf_buffer,
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=20 * mm,
+        bottomMargin=20 * mm
+    )
 
-    # Get the width and height of the A4 page.
-    page_width, page_height = A4
+    # This list contains all elements of the PDF.
+    story = []
 
-    # Add the report title.
-    pdf.setFont("DejaVu", 18)
-    pdf.drawString(50, page_height - 60, "Κλινική Οδοντιατρική Αναφορά")
+    # Report title.
+    story.append(
+        Paragraph(
+            "Κλινική Οδοντιατρική Αναφορά",
+            styles["ReportTitle"]
+        )
+    )
 
-    # Add some introductory text.
-    pdf.setFont("DejaVu", 12)
-    pdf.drawString(50, page_height - 100, "Ασθενής: Παράδειγμα Ασθενούς")
+    story.append(Spacer(1, 10 * mm))
 
-    # Finalize the PDF.
-    pdf.save()
+    # Patient information section.
+    story.append(
+        Paragraph(
+            "Στοιχεία Ασθενούς",
+            styles["SectionHeading"]
+        )
+    )
 
-    # Move the buffer position to the beginning.
+    patient_data = [
+        ["Ονοματεπώνυμο:", "Παράδειγμα Ασθενούς"],
+        ["Ημερομηνία Γέννησης:", "01/01/1980"],
+        ["Ημερομηνία Εξέτασης:", "25/11/2026"]
+    ]
+
+    patient_table = Table(
+        patient_data,
+        colWidths=[55 * mm, 110 * mm]
+    )
+
+    patient_table.setStyle(
+        TableStyle([
+            ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#333333")),
+            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eef2f6")),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#d1d5db")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ])
+    )
+
+    story.append(patient_table)
+
+    # Clinical findings section.
+    story.append(
+        Paragraph(
+            "Κλινικά Ευρήματα",
+            styles["SectionHeading"]
+        )
+    )
+
+    clinical_text = (
+        "Ο ασθενής προσήλθε για οδοντιατρική εξέταση. "
+        "Κατά την κλινική αξιολόγηση καταγράφηκαν "
+        "τα ακόλουθα ευρήματα. "
+        "Το κείμενο αυτό είναι ενδεικτικό και θα "
+        "αντικατασταθεί από την πραγματική απομαγνητοφώνηση."
+    )
+
+    story.append(
+        Paragraph(
+            clinical_text,
+            styles["ReportBody"]
+        )
+    )
+
+    # Generate the PDF.
+    document.build(story)
+
+    # Return the PDF from the beginning of the buffer.
     pdf_buffer.seek(0)
 
     return pdf_buffer
