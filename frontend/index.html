@@ -104,6 +104,65 @@
         
         <section class="history-card">
 
+
+        <!-- CLINICAL REPORT -->
+
+        <section class="report-card">
+
+            <div class="section-header">
+                <h2>Δημιουργία κλινικής αναφοράς</h2>
+            </div>
+
+            <div class="report-form">
+
+                <div class="form-group">
+                    <label for="patientName">
+                        Ονοματεπώνυμο ασθενούς
+                    </label>
+
+                    <input
+                        type="text"
+                        id="patientName"
+                        placeholder="π.χ. Γιώργος Παπαδόπουλος"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="dateOfBirth">
+                        Ημερομηνία γέννησης
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dateOfBirth"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="examinationDate">
+                        Ημερομηνία εξέτασης
+                    </label>
+
+                    <input
+                        type="date"
+                        id="examinationDate"
+                    >
+                </div>
+
+                <button
+                    type="button"
+                    id="generateReportButton"
+                    class="generate-report-button"
+                >
+                    Δημιουργία PDF
+                </button>
+
+                <p id="reportStatus"></p>
+
+            </div>
+
+        </section>
+
             <div class="section-header">
                 <h2>Αποθηκευμένες εγγραφές</h2>
             </div>
